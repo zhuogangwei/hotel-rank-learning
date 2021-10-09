@@ -9,3 +9,5 @@ with highly inconsistent results.
 Our objective is to create a computer-vision-assisted machine learning model that can more accurately
 assign hotel star ratings using images and meta-data (e.g. pricing, facilities). This promises a cheaper
 and more objective methodology in assigning hotel star ratings.
+
+The full project proposal can be found [here](https://github.com/ishakbhatt/hotel-rank-learning/blob/main/project_proposal/CS_230_Project_Proposal__Ye__Zhuo__Bhatt_.pdf).
