@@ -1,0 +1,9 @@
+# Raw URL Data
+*.xlsx
+*.xlsm
+*.xlsb
+*.xltx
+*.xls
+*.xml
+*.txt
+*.csv
