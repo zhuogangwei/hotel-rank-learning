@@ -1,8 +1,12 @@
 import os
 import csv
+import time
+import shutil
 import requests
 import boto3
 from io import BytesIO
+from PIL import Image
+from urllib.request import urlretrieve
 
 ACCESS_KEY = 'AKIAYDII5252MFKGD374'
 SECRET_KEY = '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'
@@ -22,17 +26,6 @@ def get_img_url_data_directory():
     os.chdir("../../src/preprocessing")
 
     return img_url_data_path
-
-def upload_to_s3(temp_path, img_name, count):
-    """
-    Uploads the image specified to S3
-    :param img_name:
-    :return:
-    """
-    os.chdir("temp")
-    os.system("aws s3 cp " + os.path.join(temp_path, img_name) + " s3://hotel-rating-images/")
-    os.chdir("..")
-    print("Uploading image " + img_name + " to S3 from row: " + str(count) +"...")
 
 def main():
     # client application is s3
@@ -61,16 +54,19 @@ def main():
             # upload
             for row in csvreader:
                 count += 1
+                if row[3] != '6' and row[3] != '11':
+                    # only upload exterior images
+                    continue
 
-                # retrieve img into memory
+                # extract img from URL and save to memory
                 img_url = row[1]
                 img_name = os.path.basename(img_url)
                 response = requests.get(img_url, stream=True)
 
                 # upload to S3
-                bucket = s3.Bucket(name='hotel-rating-images')
+                bucket = s3.Bucket(name='exterior-images')
                 bucket.upload_fileobj(BytesIO(response.content), img_name)
-                print("Uploading image " + img_name + " to S3 from row: " + str(count) +"...")
+                print("Uploading image " + img_name + " to S3 from row " + str(count) +"...")
 
 
 if __name__ == "__main__":
