@@ -10,10 +10,16 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.preprocessing import image
 from keras.applications.resnet import ResNet50
 from PIL import ImageFile
+from src.navigation import get_train_exterior_path, get_models_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-
 def onehot_encode(classes, class_indices):
+    """
+
+    :param classes:
+    :param class_indices:
+    :return:
+    """
     # one hot encode
     onehot_encoded = list()
     for value in classes:
@@ -23,8 +29,14 @@ def onehot_encode(classes, class_indices):
 
     return np.array(onehot_encoded)
 
-
 def load_train(img_height, img_width, train_path):
+    """
+
+    :param img_height:
+    :param img_width:
+    :param train_path:
+    :return:
+    """
     labels = os.listdir(train_path)
     labels = [p for p in labels if not p.endswith('jpg')]
     num = 0
@@ -55,8 +67,12 @@ def load_train(img_height, img_width, train_path):
 
     return X_train, y_train, label2id, id2label
 
-
 def resnet50_model(num_classes):
+    """
+
+    :param num_classes:
+    :return:
+    """
     model = ResNet50(weights='imagenet', pooling='avg', include_top=False)
     x = Dropout(0.3)(model.output)
     x = Dense(num_classes, activation='softmax')(x)
@@ -71,12 +87,15 @@ def resnet50_model(num_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model
 
-
 if __name__ == '__main__':
-    b_start = time.time()
-    train_path = './data/exterior'
 
-    model_path = './data/models/resnet50_ResNet50_v1.h5'
+    #
+
+    b_start = time.time()
+    train_path = get_train_exterior_path()
+
+    model_path = os.path.join(get_models_path(), 'resnet50_ResNet50_v1.h5')
+
     img_height = 225
     img_width = 300
     batch_size = 16

@@ -1,57 +1,9 @@
 import os
 import csv
 import requests
-import boto3
 import shutil
 import pandas as pd
-
-def get_structured_data_dir():
-    """
-    Return directory for structured data.
-    :return: path to structured data directory
-    """
-    # change directory
-    os.chdir("../../url_data/structured_hotel_data")
-
-    # get directory
-    structured_data_path = os.path.join(os.getcwd())
-    print(structured_data_path)
-
-    os.chdir("../../src/preprocessing")
-
-    return structured_data_path
-
-def get_temp_dir():
-    """
-    Return the temp directory which stores temporary labeled packages.
-    :return: path to temp directory
-    """
-    # change directory
-    os.chdir("../../temp")
-
-    # get directory
-    temp_data_path = os.path.join(os.getcwd())
-    print(temp_data_path)
-
-    os.chdir("../src/preprocessing")
-
-    return temp_data_path
-
-def get_img_url_data_directory():
-    """
-    Return the URL data directory.
-    :return: path to URL data directory
-    """
-    # change directory
-    os.chdir("../../url_data/image_urls")
-
-    # get directory
-    img_url_data_path = os.path.join(os.getcwd())
-    print(img_url_data_path)
-
-    os.chdir("../../src/preprocessing")
-
-    return img_url_data_path
+from src.navigation import get_img_url_data_directory, get_temp_dir, get_structured_data_dir
 
 def main():
 

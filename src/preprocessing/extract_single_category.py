@@ -3,25 +3,10 @@ import csv
 import requests
 import boto3
 from io import BytesIO
+from src.navigation import get_img_url_data_directory
 
 ACCESS_KEY = 'AKIAYDII5252MFKGD374'
 SECRET_KEY = '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'
-
-def get_img_url_data_directory():
-    """
-    Return the URL data directory.
-    :return: path to URL data directory
-    """
-    # change directory
-    os.chdir("../../url_data/image_urls")
-
-    # get directory
-    img_url_data_path = os.path.join(os.getcwd())
-    print(img_url_data_path)
-
-    os.chdir("../../src/preprocessing")
-
-    return img_url_data_path
 
 def main():
     # client application is s3
