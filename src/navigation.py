@@ -85,6 +85,6 @@ def get_train_exterior_path():
     os.chdir("../../data/train/exterior")
     exterior_path = os.path.join(os.getcwd())
     print(exterior_path)
-    os.chdir("../../src/models")
+    os.chdir("../../../src/models")
 
     return exterior_path

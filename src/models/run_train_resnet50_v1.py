@@ -1,14 +1,15 @@
 import os
 import time
+import boto3
 import numpy as np
 from sklearn.model_selection import train_test_split
-from keras import metrics
-from keras.applications.resnet import preprocess_input
-from keras.models import Input, Model
-from keras.layers import Lambda, GlobalAveragePooling2D, Dropout, Dense
-from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.preprocessing import image
-from keras.applications.resnet import ResNet50
+from tensorflow.keras import metrics
+from tensorflow.keras.applications.resnet import preprocess_input
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dropout, Dense
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
 from src.navigation import get_train_exterior_path, get_models_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -87,9 +88,25 @@ def resnet50_model(num_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model
 
+def download_from_aws(num_images):
+    s3 = boto3.resource('s3')
+    bucket_dict = {}
+    count = 0
+    labeled_exterior_images = s3.Bucket('labeled-exterior-images')
+    for object_sum in labeled_exterior_images.objects.filter(Prefix=""):
+        if(count == num_images):
+            break
+        if(os.path.splitext(object_sum.key)[1][1:] == "jpg"):
+            bucket_dict.update({ os.path.dirname(object_sum.key) : os.path.basename(object_sum.key) })
+
+        os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
+
+        count +=1
+    return bucket_dict
+
 if __name__ == '__main__':
 
-    #
+    bucket_dict = download_from_aws(10000)
 
     b_start = time.time()
     train_path = get_train_exterior_path()
