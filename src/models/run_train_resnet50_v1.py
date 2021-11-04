@@ -100,7 +100,7 @@ def download_from_aws(num_images):
             bucket_dict.update({ os.path.dirname(object_sum.key) : os.path.basename(object_sum.key) })
 
         os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
-
+        print("num images downloaded: " + str(count))
         count +=1
     return bucket_dict
 

@@ -36,22 +36,6 @@ def get_temp_dir():
 
     return temp_data_path
 
-def get_structured_data_dir():
-    """
-    Return directory for structured data.
-    :return: structured_data_path
-    """
-    # change directory
-    os.chdir("../../url_data/structured_hotel_data")
-
-    # get directory
-    structured_data_path = os.path.join(os.getcwd())
-    print(structured_data_path)
-
-    os.chdir("../../src/preprocessing")
-
-    return structured_data_path
-
 """TRAINING & INFERENCE"""
 def get_train_path():
     """
@@ -88,3 +72,13 @@ def get_train_exterior_path():
     os.chdir("../../../src/models")
 
     return exterior_path
+
+def get_structured_data_path():
+    """
+    Return the path to structured data.
+    :return: structured_data_path
+    """
+    os.chdir("../../data/url_data/structured_hotel_data")
+    structured_data_path = os.path.join(os.getcwd())
+    os.chdir("../../../src/models/")
+    return structured_data_path
