@@ -9,7 +9,6 @@ from keras.layers import Lambda, GlobalAveragePooling2D, Dropout, Dense
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.preprocessing import image
 from keras.applications.resnet import ResNet50
-from keras.applications.inception_v3 import InceptionV3
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -59,9 +58,6 @@ def load_train(img_height, img_width, train_path):
 
 def resnet50_model(num_classes):
     model = ResNet50(weights='imagenet', pooling='avg', include_top=False)
-    # model.layers.pop()
-    # model.outputs = [model.layers[-1].output]
-    # model.layers[-1].outbound_nodes = []
     x = Dropout(0.3)(model.output)
     x = Dense(num_classes, activation='softmax')(x)
     model = Model(model.input, x)
