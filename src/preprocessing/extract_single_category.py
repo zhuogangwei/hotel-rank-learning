@@ -1,12 +1,8 @@
 import os
 import csv
-import time
-import shutil
 import requests
 import boto3
 from io import BytesIO
-from PIL import Image
-from urllib.request import urlretrieve
 
 ACCESS_KEY = 'AKIAYDII5252MFKGD374'
 SECRET_KEY = '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'
@@ -42,7 +38,7 @@ def main():
 
     # upload image to AWS
     for i in range(num_files):
-        img_url_data_path = os.path.join(img_url_data_path, img_url_files[i+1])
+        img_url_data_path = os.path.join(img_url_data_path, img_url_files[i])
         print("Image Part " + str(i + 1))
         with open(img_url_data_path) as csvfile:
             csvreader = csv.reader(csvfile, delimiter=",")
