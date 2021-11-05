@@ -88,7 +88,7 @@ def resnet50_model(num_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model
 
-def download_from_aws(num_images):
+def download_from_aws(num_images, downloaded=False):
     s3 = boto3.resource('s3')
     bucket_dict = {}
     count = 0
@@ -98,15 +98,15 @@ def download_from_aws(num_images):
             break
         if(os.path.splitext(object_sum.key)[1][1:] == "jpg"):
             bucket_dict.update({ os.path.dirname(object_sum.key) : os.path.basename(object_sum.key) })
-
-        os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
-        print("num images downloaded: " + str(count))
+        if(downloaded == False):
+            os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
+            print("num images downloaded: " + str(count))
         count +=1
     return bucket_dict
 
 if __name__ == '__main__':
 
-    bucket_dict = download_from_aws(10000)
+    bucket_dict = download_from_aws(10000, downloaded=True)
 
     b_start = time.time()
     train_path = get_train_exterior_path()

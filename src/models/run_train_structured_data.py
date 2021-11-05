@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from sklearn import metrics
 from sklearn.linear_model import LinearRegression
-#from src.navigation import get_structured_data_path
 from sklearn.model_selection import train_test_split
 
 def get_structured_data_path():
