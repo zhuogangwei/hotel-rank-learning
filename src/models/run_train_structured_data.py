@@ -16,10 +16,10 @@ def get_structured_data_path():
     return structured_data_path
 
 if __name__ == "__main__":
-    raw_structured_data = pd.read_csv(os.path.join(get_structured_data_path(), "Hotel_metadata.csv"))
+    raw_structured_data = pd.read_csv(os.path.join(get_structured_data_path(), "hotel_meta_processed.csv"))
     # input
     x = raw_structured_data[["openyear", "numReviewers", "roomRating", "serviceRating",
-                            "value4moneyRating", "locatioRating", "geoid", "roomquantity",
+                            "value4moneyRating", "locatioRating", "roomquantity",
                             "minArea", "isStarValidated", "order_cnt", "roomnight_cnt",
                             "avg_room_price", "avg_person_price", "maxprice", "minprice",
                             "adr1", "adr2", "adr3", "adr4", "adr5", "gym", "executive_lounge",
@@ -28,7 +28,7 @@ if __name__ == "__main__":
                             "outdoor_swimming_pool", "avg_person_price_bycity", "pic_hq_ratio",
                             "pic_apperance_ratio", "pic_public_ratio", "pic_meeting_ratio",
                             "pic_restaurant_ratio", "pic_leisure_ratio", "pic_service_ratio",
-                            "renovationyear", "is_adr2_adjusted", "is_adr3_adjusted",
+                            "is_adr2_adjusted", "is_adr3_adjusted",
                             "is_adr4_adjusted", "is_adr5_adjusted"]]
 
     # output
@@ -39,6 +39,10 @@ if __name__ == "__main__":
 
     # define model & train
     model = LinearRegression()
+    x_train = np.nan_to_num(x_train)
+    y_train = np.nan_to_num(y_train)
+    x_test = np.nan_to_num(x_test)
+    y_test = np.nan_to_num(y_test)
     model.fit(x_train, y_train)
     print(model.coef_)
     print(model.intercept_)
