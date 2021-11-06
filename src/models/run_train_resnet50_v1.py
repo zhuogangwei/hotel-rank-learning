@@ -13,8 +13,58 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
-from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
+#from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+# NAV
+def get_models_path():
+    """
+    Return the models path which stores the model checkpoint at a frequency.
+    :return: models_path
+    """
+    os.chdir("../../data/models/")
+    models_path = os.path.join(os.getcwd())
+    print(models_path)
+    os.chdir("../../src/models")
+
+    return models_path
+
+def get_train_path():
+    """
+    Return the path to training data directories.
+    :return: train_path
+    """
+    os.chdir("../../data/train/")
+    train_path = os.path.join(os.getcwd())
+    print(train_path)
+    os.chdir("../../src/models")
+
+    return train_path
+
+def get_train_exterior_path():
+    """
+    Return the path to exterior training data.
+    :return:
+    """
+    os.chdir("../../data/train/exterior")
+    exterior_path = os.path.join(os.getcwd())
+    print(exterior_path)
+    os.chdir("../../../src/models")
+
+    return exterior_path
+
+def get_data_path():
+    """
+    Return the path to exterior training data.
+    :return:
+    """
+    os.chdir("../../data/")
+    data_path = os.path.join(os.getcwd())
+    print(data_path)
+    os.chdir("../src/models")
+
+    return data_path
+
 
 def onehot_encode(classes, class_indices):
     """
