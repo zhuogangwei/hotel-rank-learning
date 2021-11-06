@@ -1,5 +1,7 @@
 import os
 import time
+import csv
+import shutil
 import boto3
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -11,7 +13,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
-from src.navigation import get_train_exterior_path, get_models_path
+from src.navigation import get_train_exterior_path, get_models_path, get_train_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def onehot_encode(classes, class_indices):
@@ -55,13 +57,14 @@ def load_train(img_height, img_width, train_path):
         label_images = os.listdir(label_path)
 
         for i in range(len(label_images)):
+            print(label_images[i])
             temp_img = image.load_img(os.path.join(label_path, label_images[i]), target_size=(img_height, img_width))
             temp_img = image.img_to_array(temp_img)
 
             train_img.append(temp_img)
             train_label.append(label2id[label])
 
-    train_img = np.array(train_img)
+    train_img = np.array(train_img, dtype='uint8')
     X_train = preprocess_input(train_img)
     train_label = np.array(train_label)
     y_train = onehot_encode(train_label, label2id)
@@ -88,6 +91,28 @@ def resnet50_model(num_classes):
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model
 
+def refactor_into_label_directories():
+    """
+    Refactors img data from hotel directories into label directories.
+    :return: void
+    """
+    count = 1
+    hotel_dirs = os.listdir(get_train_exterior_path())
+    for hotel_dir in hotel_dirs:
+        hotel_files = os.listdir(os.path.join(get_train_exterior_path(), hotel_dir))
+        for file in hotel_files:
+            if(os.path.splitext(file)[1][1:] == "csv"):
+                continue
+            with open(os.path.join(get_train_exterior_path(), hotel_dir,
+                                   hotel_files[len(hotel_files)-1])) as csvfile:
+                csvreader = csv.reader(csvfile, delimiter=",")
+                for star in csvreader:
+                    shutil.copy(os.path.join(get_train_exterior_path(), hotel_dir, file),
+                                os.path.join(get_train_path(), "exterior2", str(star[1]) + "star"))
+                    print("count: " + str(count))
+                    count += 1
+        #os.remove(os.path.join(get_train_exterior_path(), hotel_dir))
+
 def download_from_aws(num_images, downloaded=False):
     s3 = boto3.resource('s3')
     bucket_dict = {}
@@ -106,11 +131,13 @@ def download_from_aws(num_images, downloaded=False):
 
 if __name__ == '__main__':
 
-    bucket_dict = download_from_aws(10000, downloaded=True)
+    #bucket_dict = download_from_aws(10000, downloaded=True)
 
     b_start = time.time()
     train_path = get_train_exterior_path()
-
+    refactored = True
+    if refactored == False:
+        refactor_into_label_directories()
     model_path = os.path.join(get_models_path(), 'resnet50_ResNet50_v1.h5')
 
     img_height = 225
