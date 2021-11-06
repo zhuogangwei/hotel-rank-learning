@@ -73,6 +73,18 @@ def get_train_exterior_path():
 
     return exterior_path
 
+def get_data_path():
+    """
+    Return the path to exterior training data.
+    :return:
+    """
+    os.chdir("../../data/")
+    data_path = os.path.join(os.getcwd())
+    print(data_path)
+    os.chdir("../src/models")
+
+    return data_path
+
 def get_structured_data_path():
     """
     Return the path to structured data.

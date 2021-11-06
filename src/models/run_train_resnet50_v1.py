@@ -13,7 +13,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
-from src.navigation import get_train_exterior_path, get_models_path, get_train_path
+from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def onehot_encode(classes, class_indices):
@@ -73,7 +73,6 @@ def load_train(img_height, img_width, train_path):
 
 def resnet50_model(num_classes):
     """
-
     :param num_classes:
     :return:
     """
@@ -96,6 +95,7 @@ def refactor_into_label_directories():
     Refactors img data from hotel directories into label directories.
     :return: void
     """
+    os.makedirs(os.path.join(get_train_path(), "exterior2"), exist_ok=True)
     count = 1
     hotel_dirs = os.listdir(get_train_exterior_path())
     for hotel_dir in hotel_dirs:
@@ -111,10 +111,11 @@ def refactor_into_label_directories():
                                 os.path.join(get_train_path(), "exterior2", str(star[1]) + "star"))
                     print("count: " + str(count))
                     count += 1
-        #os.remove(os.path.join(get_train_exterior_path(), hotel_dir))
+        os.remove(os.path.join(get_train_exterior_path(), hotel_dir))
 
 def download_from_aws(num_images, downloaded=False):
     s3 = boto3.resource('s3')
+    corrupted = os.listdir(os.path.join(get_data_path(), "Corrupted"))
     bucket_dict = {}
     count = 0
     labeled_exterior_images = s3.Bucket('labeled-exterior-images')
@@ -124,6 +125,8 @@ def download_from_aws(num_images, downloaded=False):
         if(os.path.splitext(object_sum.key)[1][1:] == "jpg"):
             bucket_dict.update({ os.path.dirname(object_sum.key) : os.path.basename(object_sum.key) })
         if(downloaded == False):
+            if(corrupted.count(os.path.basename(object_sum.key)) != 0):
+                continue
             os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
             print("num images downloaded: " + str(count))
         count +=1
