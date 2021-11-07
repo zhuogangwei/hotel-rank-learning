@@ -13,7 +13,8 @@ from tensorflow.keras.layers import Dropout, Dense
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
-from PIL import ImageFile
+from PIL import ImageFile, Image, ImageEnhance
+#from src.preprocessing.data_augmentation import contrast_all_examples, horizontal_flip_all_examples, saturate_all_examples, brighten_all_examples, sharpen_all_examples
 #from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -66,6 +67,7 @@ def get_data_path():
 
     return data_path
 
+# model
 
 def onehot_encode(classes, class_indices):
     """
@@ -128,7 +130,8 @@ def resnet50_model(num_classes):
     :return:
     """
     model = ResNet50(weights='imagenet', pooling='avg', include_top=False)
-    x = Dropout(0.3)(model.output)
+    x = Dropout(0.5)(model.output)
+    x = Dense(num_classes, kernel_regularizer='l2')
     x = Dense(num_classes, activation='softmax')(x)
     model = Model(model.input, x)
     
@@ -140,6 +143,8 @@ def resnet50_model(num_classes):
     # sgd = SGD(lr=1e-3, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model
+
+# processing
 
 def refactor_into_label_directories():
     """
@@ -167,31 +172,99 @@ def refactor_into_label_directories():
 def download_from_aws(num_images):
     s3 = boto3.resource('s3')
     corrupted = os.listdir(os.path.join(get_data_path(), "Corrupted"))
-    bucket_dict = {}
     count = 0
     labeled_exterior_images = s3.Bucket('labeled-exterior-images')
     for object_sum in labeled_exterior_images.objects.filter(Prefix=""):
         if(count == num_images):
             break
-        if(downloaded == False):
-            if(corrupted.count(os.path.basename(object_sum.key)) != 0):
-                continue
-            os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
-            print("num images downloaded: " + str(count))
+        if(corrupted.count(os.path.basename(object_sum.key)) != 0):
+            continue
+        os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
+        print("num images downloaded: " + str(count))
         count +=1
 
-if __name__ == '__main__':
+# augmentation
 
+def horizontal_flip_all_examples(examples_path):
+    print("horizontal flipping...")
+    examples = os.listdir(examples_path)
+    for example in examples:
+        img = Image.open(os.path.join(examples_path, example))
+        data = np.asarray(img)
+        data = np.fliplr(data)
+        img2 = Image.fromarray(data)
+        img2name = os.path.splitext(example)[0] + "_horizontal_flipped" + ".png" 
+        img2.save(os.path.join(examples_path, img2name))
+
+def brighten_all_examples(examples_path):
+    examples = os.listdir(examples_path)
+    print("brightening...")
+    for example in examples:
+        img = Image.open(os.path.join(examples_path, example))
+        brightness_filter = ImageEnhance.Brightness(img)
+        new_img = brightness_filter.enhance(1.1)
+        new_img_name = os.path.splitext(example)[0] + "_brightened" + ".png" 
+        new_img.save(os.path.join(examples_path, new_img_name))        
+
+def sharpen_all_examples(examples_path):
+    examples = os.listdir(examples_path)
+    print("sharpening...")
+    for example in examples:
+        img = Image.open(os.path.join(examples_path, example))
+        sharpen_filter = ImageEnhance.Sharpness(img)
+        new_img = sharpen_filter.enhance(1.1)
+        new_img_name = os.path.splitext(example)[0] + "_sharpened" + ".png" 
+        new_img.save(os.path.join(examples_path, new_img_name))       
+
+def contrast_all_examples(examples_path):
+    examples = os.listdir(examples_path)
+    print("contrasting...")
+    for example in examples:
+        img = Image.open(os.path.join(examples_path, example))
+        filter = ImageEnhance.Contrast(img)
+        new_img = filter.enhance(2)
+        new_img_name = os.path.splitext(example)[0] + "_contrasted" + ".png" 
+        new_img.save(os.path.join(examples_path, new_img_name))   
+
+def saturate_all_examples(examples_path):
+    examples = os.listdir(examples_path)
+    print("saturating...")
+    for example in examples:
+        img = Image.open(os.path.join(examples_path, example))
+        sat_filter = ImageEnhance.Color(img)
+        new_img = sat_filter.enhance(3)
+        new_img_name = os.path.splitext(example)[0] + "_saturated" + ".png" 
+        new_img.save(os.path.join(examples_path, new_img_name))           
+
+def augment_data(star_folder):
+    examples_path = os.path.join(get_train_exterior_path(), star_folder)
+    contrast_all_examples(examples_path)
+    brighten_all_examples(examples_path)
+    if(star_folder == "5star" or star_folder == "2star"):
+        saturate_all_examples(examples_path)
+    if(star_folder == "5star"):
+        horizontal_flip_all_examples(examples_path)
+        sharpen_all_examples(examples_path)
+
+if __name__ == '__main__':
+    to_augment = False
     os.makedirs(os.path.join(get_data_path(), "models"), exist_ok=True)
-    input("Would you like to download images from AWS S3? Y/N: ", download)
+    download = input("Would you like to download images from AWS S3? Y/N: ")
     if(download == "N"):
-        input("Have you downloaded images already from exterior.zip? Y/N: ", zip_download)
-        if(zip_download == "Y"):
-        with ZipFile(os.path.join(get_train_path(), "exterior.zip"), 'r') as zipObj:
-            zipObj.extractall()
-    else if(download == "Y"):
-        input("How many images would you like to download from AWS S3? Num images (integer): ", num_images)
+        zip_downloaded = input("Have you downloaded images already from exterior.zip? Y/N: ")
+        if(zip_downloaded == "N"):
+            with ZipFile(os.path.join(get_train_path(), "exterior.zip"), 'r') as zipObj:
+                zipObj.extractall(path=get_train_path())
+            to_augment = True
+    elif(download == "Y"):
+        num_images = input("How many images would you like to download from AWS S3? Num images (integer): ")
         download_from_aws(int(num_images))
+
+    if(to_augment == True):
+        # Augment 4 star and 5 star and 2 star
+        augment_data("4star")
+        augment_data("5star")
+        augment_data("2star")
 
     b_start = time.time()
     train_path = get_train_exterior_path()
@@ -203,7 +276,7 @@ if __name__ == '__main__':
     img_height = 225
     img_width = 300
     batch_size = 32
-    epochs = 50
+    epochs = 100
 
     X_train, y_train, label2id, id2label = load_train(img_height, img_width, train_path)
     num_classes = len(label2id)
