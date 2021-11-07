@@ -82,8 +82,8 @@ def resnet50_model(num_classes):
     model = Model(model.input, x)
     
     # To set the first 30 layers to non-trainable (weights will not be updated)
-    for layer in model.layers[:-30]:
-        layer.trainable = False
+    for layer in model.layers:
+        layer.trainable = True
 
     # opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
     # sgd = SGD(lr=1e-3, decay=1e-6, momentum=0.9, nesterov=True)
