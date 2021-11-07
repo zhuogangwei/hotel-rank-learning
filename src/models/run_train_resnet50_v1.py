@@ -4,6 +4,7 @@ import csv
 import shutil
 import boto3
 import numpy as np
+from zipfile import ZipFile
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import metrics
 from tensorflow.keras.applications.resnet import preprocess_input
@@ -131,7 +132,7 @@ def resnet50_model(num_classes):
     x = Dense(num_classes, activation='softmax')(x)
     model = Model(model.input, x)
     
-    # To set the first 30 layers to non-trainable (weights will not be updated)
+    # Train all layers
     for layer in model.layers:
         layer.trainable = True
 
@@ -163,7 +164,7 @@ def refactor_into_label_directories():
                     count += 1
         os.remove(os.path.join(get_train_exterior_path(), hotel_dir))
 
-def download_from_aws(num_images, downloaded=False):
+def download_from_aws(num_images):
     s3 = boto3.resource('s3')
     corrupted = os.listdir(os.path.join(get_data_path(), "Corrupted"))
     bucket_dict = {}
@@ -172,19 +173,25 @@ def download_from_aws(num_images, downloaded=False):
     for object_sum in labeled_exterior_images.objects.filter(Prefix=""):
         if(count == num_images):
             break
-        if(os.path.splitext(object_sum.key)[1][1:] == "jpg"):
-            bucket_dict.update({ os.path.dirname(object_sum.key) : os.path.basename(object_sum.key) })
         if(downloaded == False):
             if(corrupted.count(os.path.basename(object_sum.key)) != 0):
                 continue
             os.system("aws s3 sync s3://labeled-exterior-images/" + os.path.dirname(object_sum.key) + " " + os.path.join(get_train_exterior_path(), os.path.dirname(object_sum.key)))
             print("num images downloaded: " + str(count))
         count +=1
-    return bucket_dict
 
 if __name__ == '__main__':
 
-    #bucket_dict = download_from_aws(10000, downloaded=True)
+    os.makedirs(os.path.join(get_data_path(), "models"), exist_ok=True)
+    input("Would you like to download images from AWS S3? Y/N: ", download)
+    if(download == "N"):
+        input("Have you downloaded images already from exterior.zip? Y/N: ", zip_download)
+        if(zip_download == "Y"):
+        with ZipFile(os.path.join(get_train_path(), "exterior.zip"), 'r') as zipObj:
+            zipObj.extractall()
+    else if(download == "Y"):
+        input("How many images would you like to download from AWS S3? Num images (integer): ", num_images)
+        download_from_aws(int(num_images))
 
     b_start = time.time()
     train_path = get_train_exterior_path()
@@ -195,8 +202,8 @@ if __name__ == '__main__':
 
     img_height = 225
     img_width = 300
-    batch_size = 16
-    epochs = 10
+    batch_size = 32
+    epochs = 50
 
     X_train, y_train, label2id, id2label = load_train(img_height, img_width, train_path)
     num_classes = len(label2id)
