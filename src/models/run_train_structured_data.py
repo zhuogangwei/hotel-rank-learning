@@ -4,6 +4,9 @@ import numpy as np
 from sklearn import metrics
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense
 
 def get_structured_data_path():
     """
@@ -14,6 +17,47 @@ def get_structured_data_path():
     structured_data_path = os.path.join(os.getcwd())
     os.chdir("../src/models")
     return structured_data_path
+
+def run_linear_model(x_train, y_train, x_test):
+    # define model & train
+    model = LinearRegression()
+    model.fit(x_train, y_train)
+    print(model.coef_)
+    print(model.intercept_)
+    pd.DataFrame(model.coef_, x.columns, columns = ['Coeff'])
+    # inference
+    predictions = np.round(model.predict(x_test))
+    predictions[predictions>5] =5
+    predictions[predictions<1] =1
+
+    # metrics
+    metrics.mean_absolute_error(y_test, predictions)
+    metrics.mean_squared_error(y_test, predictions)
+    np.sqrt(metrics.mean_squared_error(y_test, predictions))
+    correct = predictions == y_test
+    acc = sum(correct)/len(predictions)
+    print('Test Accuracy: %.3f' % acc)
+
+def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
+    #one-hot encoding for labels
+    encoder = OneHotEncoder(handle_unknown='ignore')
+    y_train = pd.DataFrame(encoder.fit_transform(y_train.reshape(len(y_train),1)).toarray())
+    y_test = pd.DataFrame(encoder.fit_transform(y_test.reshape(len(y_test),1)).toarray())
+    
+    # define model
+    model = Sequential()
+    model.add(Dense(20, activation='relu', kernel_initializer='he_normal', input_shape=(x_train.shape[1],)))
+    model.add(Dense(12, activation='relu', kernel_initializer='he_normal'))
+    model.add(Dense(10, activation='relu', kernel_initializer='he_normal'))
+    model.add(Dense(5, activation='softmax'))
+    # compile the model
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    # fit the model
+    model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
+    # inference
+    loss, acc = model.evaluate(x_test, y_test, verbose=1)
+    print('Test Accuracy: %.3f' % acc)
+
 
 if __name__ == "__main__":
     raw_structured_data = pd.read_csv(os.path.join(get_structured_data_path(), "hotel_meta_processed.csv"))
@@ -37,27 +81,12 @@ if __name__ == "__main__":
     # split data into train and test
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
-    # define model & train
-    model = LinearRegression()
+    #handling null(if any)
     x_train = np.nan_to_num(x_train)
     y_train = np.nan_to_num(y_train)
     x_test = np.nan_to_num(x_test)
     y_test = np.nan_to_num(y_test)
-    model.fit(x_train, y_train)
-    print(model.coef_)
-    print(model.intercept_)
-    pd.DataFrame(model.coef_, x.columns, columns = ['Coeff'])
 
-    # inference
-    predictions = np.round(model.predict(x_test))
-    predictions[predictions>5] =5
-    predictions[predictions<1] =1
-
-    # metrics
-    metrics.mean_absolute_error(y_test, predictions)
-    metrics.mean_squared_error(y_test, predictions)
-    np.sqrt(metrics.mean_squared_error(y_test, predictions))
-    correct = predictions == y_test
-    incorrect = predictions != y_test
-    print(sum(correct))
-    print(sum(incorrect))
+    #run_linear_model(x_train, y_train, x_test)
+    run_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
+    
