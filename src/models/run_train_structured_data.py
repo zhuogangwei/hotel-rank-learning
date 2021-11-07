@@ -10,9 +10,9 @@ def get_structured_data_path():
     Return the path to structured data.
     :return: structured_data_path
     """
-    os.chdir("../../data/url_data/structured_hotel_data")
+    os.chdir("../../data")
     structured_data_path = os.path.join(os.getcwd())
-    os.chdir("../../../src/models/")
+    os.chdir("../src/models")
     return structured_data_path
 
 if __name__ == "__main__":
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     y = raw_structured_data["star"]
 
     # split data into train and test
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.01)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
     # define model & train
     model = LinearRegression()
@@ -49,10 +49,15 @@ if __name__ == "__main__":
     pd.DataFrame(model.coef_, x.columns, columns = ['Coeff'])
 
     # inference
-    predictions = model.predict(x_test)
+    predictions = np.round(model.predict(x_test))
+    predictions[predictions>5] =5
+    predictions[predictions<1] =1
 
     # metrics
     metrics.mean_absolute_error(y_test, predictions)
     metrics.mean_squared_error(y_test, predictions)
     np.sqrt(metrics.mean_squared_error(y_test, predictions))
-
+    correct = predictions == y_test
+    incorrect = predictions != y_test
+    print(sum(correct))
+    print(sum(incorrect))
