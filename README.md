@@ -11,3 +11,36 @@ assign hotel star ratings using images and meta-data (e.g. pricing, facilities).
 and more objective methodology in assigning hotel star ratings.
 
 The full project proposal can be found [here](https://github.com/ishakbhatt/hotel-rank-learning/blob/main/project_proposal/CS_230_Project_Proposal__Ye__Zhuo__Bhatt_.pdf).
+
+## Training (MILESTONE ONLY)
+### ResNet50-based CNN 
+This model classifies hotels into their respective ratings using **exterior image data**.    
+
+The model can be trained directly from `train_resnet50.py` from the `src/models` directory (do not train from root).   
+
+When the program starts, you will be prompted with the following questions:    
+
+`Would you like to download images from AWS S3? Y/N:`    
+`Have you downloaded images already from exterior.zip? Y/N:`    
+
+Answer `N` to both. A data sample is provided in the repository in `exterior.zip` that will be used for training.    
+
+### Hotel Metadata DNN
+This model classifies hotels into their respective ratings using **hotel metadata**.    
+
+The model can be trained directly from `train_structured.py` from the `src/models` directory (do not train from root).
+
+## Class distribution
+Run `class_dist.py` from `src/preprocessing`. The class distribution (without augmentation) can be found in `data/data_analysis`.
+
+## Libraries
+`pillow`    
+`numpy`    
+`tensorflow`    
+`shutil`    
+`boto3`   
+`zipfile`  
+`os`  
+`matplotlib`  
+`sklearn`
+`pandas`
