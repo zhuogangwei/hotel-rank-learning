@@ -12,11 +12,12 @@ and more objective methodology in assigning hotel star ratings.
 
 The full project proposal can be found [here](https://github.com/ishakbhatt/hotel-rank-learning/blob/main/project_proposal/CS_230_Project_Proposal__Ye__Zhuo__Bhatt_.pdf).
 
-## Training 
-### ResNet50-based CNN (MILESTONE ONLY)
+## Training (MILESTONE ONLY)
+### ResNet50-based CNN 
 This model classifies hotels into their respective ratings using **exterior image data**.    
 
 The model can be trained directly from `train_resnet50.py` from the `src/models` directory (do not train from root).   
+
 When the program starts, you will be prompted with the following questions:    
 
 `Would you like to download images from AWS S3? Y/N:`    
