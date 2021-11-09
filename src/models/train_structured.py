@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras import optimizers
 
 def get_structured_data_path():
     """
@@ -41,19 +41,20 @@ def run_linear_model(x_train, y_train, x_test):
 
 def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     #one-hot encoding for labels
-    encoder = OneHotEncoder(handle_unknown='ignore')
+    encoder = OneHotEncoder(handle_unknown='error')
     y_train = pd.DataFrame(encoder.fit_transform(y_train.reshape(len(y_train),1)).toarray())
     y_test = pd.DataFrame(encoder.fit_transform(y_test.reshape(len(y_test),1)).toarray())
     
     # define model
     model = Sequential()
-    model.add(Dense(81, activation='relu', kernel_initializer='he_normal', input_shape=(x_train.shape[1],)))
+    model.add(Dense(64, activation='relu', kernel_initializer='he_normal', input_shape=(x_train.shape[1],)))
     model.add(Dense(32, activation='relu', kernel_initializer='he_normal'))
     model.add(Dense(16, activation='relu', kernel_initializer='he_normal'))
     model.add(Dense(8, activation='relu', kernel_initializer='he_normal'))
     model.add(Dense(5, activation='softmax'))
     # compile the model
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    optmz = optimizers.Adam(learning_rate=0.0005, epsilon=1e-7)
+    model.compile(optimizer=optmz, loss='categorical_crossentropy', metrics=['accuracy'])
     # fit the model
     model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
     # inference
