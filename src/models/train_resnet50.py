@@ -190,14 +190,18 @@ def saturate_all_examples(examples_path):
     examples = os.listdir(examples_path)
     os.makedirs(os.path.join(examples_path, "temp_saturated"), exist_ok=True)
     print("saturating...")
-    for example in examples:
-        _, ext = os.path.splitext(example)
-        if(ext):
-            img = Image.open(os.path.join(examples_path, example))
-            sat_filter = ImageEnhance.Color(img)
-            new_img = sat_filter.enhance(3)
-            new_img_name = os.path.splitext(example)[0] + "_saturated" + ".jpg"
-            new_img.save(os.path.join(examples_path, "temp_saturated", new_img_name))
+    enhance_factors = [0.2, 0.1, 0.25, 0.3, 0.4]
+    for enhance_factor in enhance_factors:
+        for example in examples:
+            _, ext = os.path.splitext(example)
+            if(ext):
+                img = Image.open(os.path.join(examples_path, example))
+                sat_filter = ImageEnhance.Color(img)
+                while enhance_factor < 4:
+                    new_img = sat_filter.enhance(enhance_factor)
+                    new_img_name = os.path.splitext(example)[0] + "_saturated_" + str(enhance_factor) + ".jpg"
+                    new_img.save(os.path.join(examples_path, "temp_saturated", new_img_name))
+                    enhance_factor += 0.5
 
 def move_data_from_temp(examples_path, temp_folder):
     filenames = os.listdir(os.path.join(examples_path, temp_folder))
@@ -208,23 +212,26 @@ def move_data_from_temp(examples_path, temp_folder):
 def augment_data(star_folder):
     examples_path = os.path.join(get_train_exterior_path(), star_folder)
     contrast_all_examples(examples_path)
-    brighten_all_examples(examples_path)
     if(star_folder == "5star" or "1star"):
-        saturate_all_examples(examples_path)
-    if(star_folder == "5star"):
-        horizontal_flip_all_examples(examples_path)
+        brighten_all_examples(examples_path)
         sharpen_all_examples(examples_path)
+    if(star_folder == "1star"):
+        saturate_all_examples(examples_path)
+        horizontal_flip_all_examples(examples_path)
         move_data_from_temp(examples_path, "temp_flipped")
-        move_data_from_temp(examples_path, "temp_sharpened")
-    if(star_folder == "5star" or star_folder == "1star"):
         move_data_from_temp(examples_path, "temp_saturated")
+    if(star_folder == "5star" or star_folder == "1star"):
+        move_data_from_temp(examples_path, "temp_sharpened")
+        move_data_from_temp(examples_path, "temp_brightened")
     move_data_from_temp(examples_path, "temp_contrasted")
-    move_data_from_temp(examples_path, "temp_brightened")
+
 
 if __name__ == '__main__':
 
     # User-prompted data download
-    to_augment = False # CHANGE AFTER MILESTONE
+    to_augment = False
+    refactored = True
+
     os.makedirs(os.path.join(get_data_path(), "models"), exist_ok=True)
     download = input("Would you like to download images from AWS S3? Y/N: ")
     if(download == "N"):
@@ -232,22 +239,23 @@ if __name__ == '__main__':
         if(zip_downloaded == "N"):
             with ZipFile(os.path.join(get_train_path(), "exterior.zip"), 'r') as zipObj:
                 zipObj.extractall(path=get_train_path())
-            #to_augment = True # CHANGE AFTER MILESTONE
+            # to_augment = True
     elif(download == "Y"):
         num_images = input("How many hotels would you like to download images for from AWS S3? Num images (integer): ")
         download_from_aws(int(num_images))
+        refactored = False
 
     # Data augmentation (skipped for milestone)
     if(to_augment == True):
         # Augment 4 star and 5 star and 2 star
         augment_data("1star")
         augment_data("3star")
+        augment_data("4star")
         augment_data("5star")
 
     # training begin
     b_start = time.time()
     train_path = get_train_exterior_path()
-    refactored = True
     if refactored == False:
         refactor_into_label_directories()
     model_path = os.path.join(get_models_path(), 'resnet50_ResNet50_v1.h5')

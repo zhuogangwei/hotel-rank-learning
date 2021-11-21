@@ -8,7 +8,7 @@ def class_analysis_before_augmentation():
     num_examples_per_class = {}
     classes = os.listdir(get_train_exterior_path())
     for i in range(len(classes)):
-        num_examples_per_class.update({i : len(os.listdir(os.path.join(get_train_exterior_path(), classes[i]))) })
+        num_examples_per_class.update({i+1 : len(os.listdir(os.path.join(get_train_exterior_path(), classes[i]))) })
     width = 1.0
     os.makedirs(os.path.join(get_data_path(), "data_analysis"), exist_ok=True)
     plt.bar(num_examples_per_class.keys(), num_examples_per_class.values(), width, color='g') 
