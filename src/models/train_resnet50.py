@@ -1,6 +1,7 @@
 import os
 import time
 import csv
+#import pandas as pd
 import shutil
 import boto3
 import numpy as np
@@ -15,7 +16,7 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
 from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
-from src.augment_image import augment_data
+from src.preprocessing.augment_image import augment_data
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -46,6 +47,7 @@ def load_images(img_height, img_width, train_path):
     :return:
     """
     labels = os.listdir(train_path)
+    #label are 1star, ..., 5star. Image files are group into 5 folders, with folder name = star number 
     labels = [p for p in labels if not p.endswith('jpg')]
     num = 0
     label2id = {}
@@ -62,7 +64,7 @@ def load_images(img_height, img_width, train_path):
         label_images = os.listdir(label_path)
 
         for i in range(len(label_images)):
-            print(label_images[i])
+            #print(label_images[i])
             temp_img = image.load_img(os.path.join(label_path, label_images[i]), target_size=(img_height, img_width))
             temp_img = image.img_to_array(temp_img)
 
