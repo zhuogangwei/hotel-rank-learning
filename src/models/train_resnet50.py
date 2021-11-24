@@ -13,8 +13,9 @@ from tensorflow.keras.layers import Dropout, Dense
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet import ResNet50
-from PIL import ImageFile, Image, ImageEnhance
+from PIL import ImageFile
 from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
+from src.augment_image import augment_data
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -36,7 +37,7 @@ def onehot_encode(classes, class_indices):
 
     return np.array(onehot_encoded)
 
-def load_train(img_height, img_width, train_path):
+def load_images(img_height, img_width, train_path):
     """
 
     :param img_height:
@@ -132,98 +133,6 @@ def download_from_aws(num_images):
         print("num images downloaded: " + str(count))
         count +=1
 
-# augmentation
-def horizontal_flip_all_examples(examples_path):
-    print("flipping examples horizontally...")
-    examples = os.listdir(examples_path)
-    os.makedirs(os.path.join(examples_path, "temp_flipped"), exist_ok=True)
-    for example in examples:
-        _, ext = os.path.splitext(example)
-        if(ext):
-            img = Image.open(os.path.join(examples_path, example))
-            data = np.asarray(img)
-            data = np.fliplr(data)
-            img2 = Image.fromarray(data)
-            img2name = os.path.splitext(example)[0] + "_horizontal_flipped" + ".jpg"
-            img2.save(os.path.join(examples_path, "temp_flipped", img2name))
-
-def brighten_all_examples(examples_path):
-    examples = os.listdir(examples_path)
-    print("brightening...")
-    os.makedirs(os.path.join(examples_path, "temp_brightened"), exist_ok=True)
-    for example in examples:
-        _, ext = os.path.splitext(example)
-        if(ext):
-            img = Image.open(os.path.join(examples_path, example))
-            brightness_filter = ImageEnhance.Brightness(img)
-            new_img = brightness_filter.enhance(1.1)
-            new_img_name = os.path.splitext(example)[0] + "_brightened" + ".jpg"
-            new_img.save(os.path.join(examples_path, "temp_brightened", new_img_name))
-
-def sharpen_all_examples(examples_path):
-    examples = os.listdir(examples_path)
-    os.makedirs(os.path.join(examples_path, "temp_sharpened"), exist_ok=True)
-    print("sharpening...")
-    for example in examples:
-        _, ext = os.path.splitext(example)
-        if(ext):
-            img = Image.open(os.path.join(examples_path, example))
-            sharpen_filter = ImageEnhance.Sharpness(img)
-            new_img = sharpen_filter.enhance(1.1)
-            new_img_name = os.path.splitext(example)[0] + "_sharpened" + ".jpg"
-            new_img.save(os.path.join(examples_path, "temp_sharpened", new_img_name))
-
-def contrast_all_examples(examples_path):
-    examples = os.listdir(examples_path)
-    os.makedirs(os.path.join(examples_path, "temp_contrasted"), exist_ok=True)
-    print("contrasting...")
-    for example in examples:
-        _, ext = os.path.splitext(example)
-        if(ext):
-            img = Image.open(os.path.join(examples_path, example))
-            filter = ImageEnhance.Contrast(img)
-            new_img = filter.enhance(2)
-            new_img_name = os.path.splitext(example)[0] + "_contrasted" + ".jpg"
-            new_img.save(os.path.join(examples_path, "temp_contrasted", new_img_name))
-
-def saturate_all_examples(examples_path):
-    examples = os.listdir(examples_path)
-    os.makedirs(os.path.join(examples_path, "temp_saturated"), exist_ok=True)
-    print("saturating...")
-    enhance_factors = [0.2, 0.1, 0.25, 0.3, 0.4]
-    for enhance_factor in enhance_factors:
-        for example in examples:
-            _, ext = os.path.splitext(example)
-            if(ext):
-                img = Image.open(os.path.join(examples_path, example))
-                sat_filter = ImageEnhance.Color(img)
-                while enhance_factor < 4:
-                    new_img = sat_filter.enhance(enhance_factor)
-                    new_img_name = os.path.splitext(example)[0] + "_saturated_" + str(enhance_factor) + ".jpg"
-                    new_img.save(os.path.join(examples_path, "temp_saturated", new_img_name))
-                    enhance_factor += 0.5
-
-def move_data_from_temp(examples_path, temp_folder):
-    filenames = os.listdir(os.path.join(examples_path, temp_folder))
-    for filename in filenames:
-        shutil.move(os.path.join(examples_path, temp_folder, filename), examples_path)
-    os.removedirs(os.path.join(examples_path, temp_folder))
-
-def augment_data(star_folder):
-    examples_path = os.path.join(get_train_exterior_path(), star_folder)
-    contrast_all_examples(examples_path)
-    if(star_folder == "5star" or "1star"):
-        brighten_all_examples(examples_path)
-        sharpen_all_examples(examples_path)
-    if(star_folder == "1star"):
-        saturate_all_examples(examples_path)
-        horizontal_flip_all_examples(examples_path)
-        move_data_from_temp(examples_path, "temp_flipped")
-        move_data_from_temp(examples_path, "temp_saturated")
-    if(star_folder == "5star" or star_folder == "1star"):
-        move_data_from_temp(examples_path, "temp_sharpened")
-        move_data_from_temp(examples_path, "temp_brightened")
-    move_data_from_temp(examples_path, "temp_contrasted")
 
 
 if __name__ == '__main__':
@@ -265,12 +174,12 @@ if __name__ == '__main__':
     batch_size = 32
     epochs = 100
 
-    X_train, y_train, label2id, id2label = load_train(img_height, img_width, train_path)
+    X, Y, label2id, id2label = load_images(img_height, img_width, train_path)
     num_classes = len(label2id)
 
     model = resnet50_model(num_classes)
 
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=0)
+    X_train, X_val, Y_train, Y_val = train_test_split(X, Y, test_size=0.2, random_state=0)
 
     early_stopping = EarlyStopping(monitor='val_loss',
                                    mode='min',
@@ -279,8 +188,8 @@ if __name__ == '__main__':
                                    patience=7)
 
     checkpointer = ModelCheckpoint(filepath=model_path, verbose=1, save_best_only=True)
-    history = model.fit(X_train, y_train,
-                        validation_data=(X_val, y_val),
+    history = model.fit(X_train, Y_train,
+                        validation_data=(X_val, Y_val),
                         epochs=epochs,
                         batch_size=batch_size,
                         shuffle=True,
