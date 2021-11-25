@@ -1,7 +1,7 @@
 import os
 import time
 import csv
-#import pandas as pd
+import pandas as pd
 import shutil
 import boto3
 import numpy as np
@@ -59,24 +59,39 @@ def load_images(img_height, img_width, train_path):
 
     train_img = []
     train_label = []
+    hotelid_image_mapping = pd.DataFrame(columns=['image_serialized', 'star'])
+
     for label in labels:
         label_path = os.path.join(train_path, label)
-        label_images = os.listdir(label_path)
+        image_filenames = os.listdir(label_path)
+        temp_star = label2id[label]
 
-        for i in range(len(label_images)):
-            #print(label_images[i])
-            temp_img = image.load_img(os.path.join(label_path, label_images[i]), target_size=(img_height, img_width))
-            temp_img = image.img_to_array(temp_img)
-
-            train_img.append(temp_img)
-            train_label.append(label2id[label])
+        for image_filename in image_filenames:
+            temp_img = image.load_img(os.path.join(label_path, image_filename), target_size=(img_height, img_width))
+            #image serialization
+            temp_img = image.img_to_array(temp_img).astype('uint8').tobytes()
+            temp_hotelid = image_filename[0 : image_filename.find('_')]
+            new_row = pd.DataFrame([[temp_img, temp_star]], columns=hotelid_image_mapping.columns, index=[temp_hotelid])
+            hotelid_image_mapping = hotelid_image_mapping.append(new_row)
+            #train_img.append(temp_img)
+            #train_label.append(label2id[label])
+    
+    #shuffle image orders
+    hotelid_image_mapping = hotelid_image_mapping.sample(frac=1)
+    
+    #image deserialization
+    for temp_img in hotelid_image_mapping['image_serialized']:
+        temp_deserialized_img = np.frombuffer(temp_img, dtype='uint8').reshape(img_height, img_width, 3)
+        train_img.append(temp_deserialized_img)
 
     train_img = np.array(train_img, dtype='uint8')
     X_train = preprocess_input(train_img)
-    train_label = np.array(train_label)
+    #train_label = np.array(train_label)
+    train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
+    hotelid_sequence = hotelid_image_mapping.index.values
     y_train = onehot_encode(train_label, label2id)
-
-    return X_train, y_train, label2id, id2label
+    
+    return X_train, y_train, label2id, id2label, hotelid_sequence
 
 def resnet50_model(num_classes):
     """
@@ -141,7 +156,7 @@ if __name__ == '__main__':
 
     # User-prompted data download
     to_augment = False
-    refactored = True
+    refactored = False
 
     os.makedirs(os.path.join(get_data_path(), "models"), exist_ok=True)
     download = input("Would you like to download images from AWS S3? Y/N: ")
@@ -176,7 +191,7 @@ if __name__ == '__main__':
     batch_size = 32
     epochs = 100
 
-    X, Y, label2id, id2label = load_images(img_height, img_width, train_path)
+    X, Y, label2id, id2label, _ = load_images(img_height, img_width, train_path)
     num_classes = len(label2id)
 
     model = resnet50_model(num_classes)
