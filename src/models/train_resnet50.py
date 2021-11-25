@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     # User-prompted data download
     to_augment = False
-    refactored = False
+    refactored = True
 
     os.makedirs(os.path.join(get_data_path(), "models"), exist_ok=True)
     download = input("Would you like to download images from AWS S3? Y/N: ")
