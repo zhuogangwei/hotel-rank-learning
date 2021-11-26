@@ -17,30 +17,12 @@ from tensorflow.keras.applications.resnet import ResNet50
 from PIL import ImageFile
 from src.navigation import get_train_exterior_path, get_models_path, get_train_path, get_data_path
 from src.preprocessing.augment_image import augment_data
+from src.utils import star_onehot_encode
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-# model
-
-def onehot_encode(classes, class_indices):
-    """
-
-    :param classes:
-    :param class_indices:
-    :return:
-    """
-    # one hot encode
-    onehot_encoded = list()
-    for value in classes:
-        letter = [0 for _ in range(len(class_indices))]
-        letter[value] = 1
-        onehot_encoded.append(letter)
-
-    return np.array(onehot_encoded)
-
 def load_images(img_height, img_width, train_path):
     """
-
     :param img_height:
     :param img_width:
     :param train_path:
@@ -48,14 +30,7 @@ def load_images(img_height, img_width, train_path):
     """
     labels = os.listdir(train_path)
     #label are 1star, ..., 5star. Image files are group into 5 folders, with folder name = star number 
-    labels = [p for p in labels if not p.endswith('jpg')]
-    num = 0
-    label2id = {}
-    for label in labels:
-        label2id[label] = num
-        num += 1
-    id2label = {v: k for k, v in label2id.items()}
-    print("label2id : ", label2id)
+    labels = [p for p in labels if p.endswith('star')]
 
     train_img = []
     train_label = []
@@ -64,7 +39,7 @@ def load_images(img_height, img_width, train_path):
     for label in labels:
         label_path = os.path.join(train_path, label)
         image_filenames = os.listdir(label_path)
-        temp_star = label2id[label]
+        temp_star = label[0] #the first char of '5star' is 5
 
         for image_filename in image_filenames:
             temp_img = image.load_img(os.path.join(label_path, image_filename), target_size=(img_height, img_width))
@@ -89,7 +64,7 @@ def load_images(img_height, img_width, train_path):
     #train_label = np.array(train_label)
     train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
     hotelid_sequence = hotelid_image_mapping.index.values
-    y_train = onehot_encode(train_label, label2id)
+    y_train = star_onehot_encode(train_label)
     
     return X_train, y_train, label2id, id2label, hotelid_sequence
 
@@ -104,9 +79,9 @@ def resnet50_model(num_classes):
     x = Dense(num_classes, activation='softmax')(x)
     model = Model(model.input, x)
     
-    # Train all layers
-    for layer in model.layers:
-        layer.trainable = True
+    # Train last a few layers
+    for layer in model.layers[:-30]:
+        layer.trainable = False
 
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
     return model

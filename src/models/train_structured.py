@@ -69,10 +69,6 @@ def run_linear_model(x_train, y_train, x_test):
 
 def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     #one-hot encoding for labels
-    #encoder = OneHotEncoder(handle_unknown='error')
-    #y_train = pd.DataFrame(encoder.fit_transform(y_train.reshape(len(y_train),1)).toarray())
-    #y_test = pd.DataFrame(encoder.fit_transform(y_test.reshape(len(y_test),1)).toarray())
-
     y_train = star_onehot_encode(y_train)
     y_test = star_onehot_encode(y_test)
     
