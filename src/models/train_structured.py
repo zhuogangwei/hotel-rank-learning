@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as pyplot
 from sklearn import metrics
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -69,6 +70,10 @@ def run_linear_model(x_train, y_train, x_test):
 
 def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     #one-hot encoding for labels
+    #encoder = OneHotEncoder(handle_unknown='error')
+    #y_train = pd.DataFrame(encoder.fit_transform(y_train.reshape(len(y_train),1)).toarray())
+    #y_test = pd.DataFrame(encoder.fit_transform(y_test.reshape(len(y_test),1)).toarray())
+
     y_train = star_onehot_encode(y_train)
     y_test = star_onehot_encode(y_test)
     
@@ -84,10 +89,28 @@ def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     optmz = optimizers.Adam(learning_rate=0.0002, epsilon=1e-8)
     model.compile(optimizer=optmz, loss='categorical_crossentropy', metrics=['accuracy'])
     # fit the model
-    model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
-    # inference
-    loss, acc = model.evaluate(x_test, y_test, verbose=1)
-    print('Test Accuracy: %.3f' % acc)
+    history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=epochs, batch_size=batch_size, verbose=1)
+    
+    # evaluate the model
+    _, train_acc = model.evaluate(x_train, y_train, verbose=0)
+    _, test_acc = model.evaluate(x_test, y_test, verbose=0)
+
+    # plot loss during training
+    pyplot.subplot(211)
+    pyplot.title('Loss')
+    pyplot.plot(history.history['loss'], label='train')
+    pyplot.plot(history.history['val_loss'], label='test')
+    pyplot.legend()
+ 
+    # plot accuracy during training
+    pyplot.subplot(212)
+    pyplot.title('Accuracy')
+    pyplot.plot(history.history['accuracy'], label='train')
+    pyplot.plot(history.history['val_accuracy'], label='test')
+    pyplot.legend()
+    pyplot.tight_layout()
+    pyplot.show()
+ 
 
 
 if __name__ == "__main__":
@@ -103,5 +126,5 @@ if __name__ == "__main__":
     y_test = np.nan_to_num(y_test)
 
     #run_linear_model(x_train, y_train, x_test)
-    run_DNN_model(x_train, y_train, x_test, y_test, 20, 32)
+    run_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
     
