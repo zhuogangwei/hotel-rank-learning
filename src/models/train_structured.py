@@ -49,7 +49,7 @@ def load_metadata(filename):
     
     return x, y, hotelids
 
-def run_linear_model(x_train, y_train, x_test):
+def train_linear_model(x_train, y_train, x_test):
     # define model & train
     model = LinearRegression()
     model.fit(x_train, y_train)
@@ -68,8 +68,10 @@ def run_linear_model(x_train, y_train, x_test):
     correct = predictions == y_test
     acc = sum(correct)/len(predictions)
     print('Test Accuracy: %.3f' % acc)
+    
+    return model
 
-def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
+def train_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
 
     y_train = star_onehot_encode(y_train)
     y_test = star_onehot_encode(y_test)
@@ -107,6 +109,8 @@ def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     pyplot.legend()
     pyplot.tight_layout()
     pyplot.show()
+    
+    return model
  
 
 
@@ -122,6 +126,6 @@ if __name__ == "__main__":
     x_test = np.nan_to_num(x_test)
     y_test = np.nan_to_num(y_test)
 
-    #run_linear_model(x_train, y_train, x_test)
-    run_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
+    #linear_model = train_linear_model(x_train, y_train, x_test)
+    DNN_model = train_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
     
