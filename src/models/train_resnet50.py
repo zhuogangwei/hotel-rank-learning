@@ -66,7 +66,7 @@ def load_images(img_height, img_width, train_path):
     hotelid_sequence = hotelid_image_mapping.index.values
     y_train = star_onehot_encode(train_label)
     
-    return X_train, y_train, label2id, id2label, hotelid_sequence
+    return X_train, y_train, hotelid_sequence
 
 def resnet50_model(num_classes):
     """
@@ -166,8 +166,8 @@ if __name__ == '__main__':
     batch_size = 32
     epochs = 100
 
-    X, Y, label2id, id2label, _ = load_images(img_height, img_width, train_path)
-    num_classes = len(label2id)
+    X, Y, _ = load_images(img_height, img_width, train_path)
+    num_classes = 5 # five star categories
 
     model = resnet50_model(num_classes)
 
