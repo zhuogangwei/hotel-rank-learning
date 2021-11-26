@@ -9,6 +9,9 @@ from sklearn.preprocessing import OneHotEncoder
 from tensorflow.keras import Sequential, optimizers
 from tensorflow.keras.layers import Dense, LeakyReLU
 from src.utils import star_onehot_encode
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
 
 def get_structured_data_path():
     """
@@ -113,8 +116,21 @@ def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     pyplot.tight_layout()
     pyplot.show()
  
-
-
+    # measure accuracy and F1 score 
+    yhat_classes = model.predict(x_test)
+    yhat_classes = np.argmax(yhat_classes,axis=1)
+    y_true=np.argmax(y_test,axis=1)
+           
+    # accuracy: (tp + tn) / (p + n)
+    accuracy = accuracy_score(y_true, yhat_classes)
+    print('Accuracy: %f' % accuracy)
+    # f1: 2 tp / (2 tp + fp + fn)
+    f1 = f1_score(y_true, yhat_classes, average='weighted')
+    print('Weighted F1 score: %f' % f1)
+    # confusion matrix
+    matrix = confusion_matrix(y_true, yhat_classes)
+    print(matrix)
+    
 if __name__ == "__main__":
     x, y = load_metadata("hotel_meta_processed.csv")
     
@@ -128,5 +144,5 @@ if __name__ == "__main__":
     y_test = np.nan_to_num(y_test)
 
     #run_linear_model(x_train, y_train, x_test)
-    run_DNN_model(x_train, y_train, x_test, y_test, 20, 32)
+    run_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
     
