@@ -37,6 +37,7 @@ def load_metadata(filename):
     x2 = raw_structured_data[["renovationyear", "gym", "executive_lounge",
                             "indoor_swimming_pool", "bathrobe", "laundry_service", "X24h_frontdesk",
                             "conference_hall", "luggage_storage", "roomcleaneddaily", "outdoor_swimming_pool"]]
+    hotelids = raw_structured_data[["hotelid"]]
     
     encoder = OneHotEncoder(handle_unknown='error')
     x2_onehot = pd.DataFrame(encoder.fit_transform(x2).toarray())
@@ -46,7 +47,7 @@ def load_metadata(filename):
     # output
     y = raw_structured_data["star"]
     
-    return x, y
+    return x, y, hotelids
 
 def run_linear_model(x_train, y_train, x_test):
     # define model & train
@@ -69,10 +70,6 @@ def run_linear_model(x_train, y_train, x_test):
     print('Test Accuracy: %.3f' % acc)
 
 def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
-    #one-hot encoding for labels
-    #encoder = OneHotEncoder(handle_unknown='error')
-    #y_train = pd.DataFrame(encoder.fit_transform(y_train.reshape(len(y_train),1)).toarray())
-    #y_test = pd.DataFrame(encoder.fit_transform(y_test.reshape(len(y_test),1)).toarray())
 
     y_train = star_onehot_encode(y_train)
     y_test = star_onehot_encode(y_test)
@@ -114,7 +111,7 @@ def run_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
 
 
 if __name__ == "__main__":
-    x, y = load_metadata("hotel_meta_processed.csv")
+    x, y, _ = load_metadata("hotel_meta_processed.csv")
     
     # split data into train and test
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=123)

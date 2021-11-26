@@ -21,7 +21,7 @@ from src.utils import star_onehot_encode
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-def load_images(img_height, img_width, train_path):
+def load_images(img_height, img_width, train_path, skip_deserialize=False):
     """
     :param img_height:
     :param img_width:
@@ -32,8 +32,6 @@ def load_images(img_height, img_width, train_path):
     #label are 1star, ..., 5star. Image files are group into 5 folders, with folder name = star number 
     labels = [p for p in labels if p.endswith('star')]
 
-    train_img = []
-    train_label = []
     hotelid_image_mapping = pd.DataFrame(columns=['image_serialized', 'star'])
 
     for label in labels:
@@ -45,7 +43,7 @@ def load_images(img_height, img_width, train_path):
             temp_img = image.load_img(os.path.join(label_path, image_filename), target_size=(img_height, img_width))
             #image serialization
             temp_img = image.img_to_array(temp_img).astype('uint8').tobytes()
-            temp_hotelid = image_filename[0 : image_filename.find('_')]
+            temp_hotelid = int(image_filename[0 : image_filename.find('_')])
             new_row = pd.DataFrame([[temp_img, temp_star]], columns=hotelid_image_mapping.columns, index=[temp_hotelid])
             hotelid_image_mapping = hotelid_image_mapping.append(new_row)
             #train_img.append(temp_img)
@@ -53,6 +51,16 @@ def load_images(img_height, img_width, train_path):
     
     #shuffle image orders
     hotelid_image_mapping = hotelid_image_mapping.sample(frac=1)
+    
+    if (True==skip_deserialize):
+        return None, None, hotelid_image_mapping
+    else:
+        X_train, y_train = deserialize_image(hotelid_image_mapping, img_height, img_width)
+        return X_train, y_train, hotelid_image_mapping
+
+def deserialize_image(hotelid_image_mapping, img_height, img_width):
+    train_img = list()
+    train_label = []
     
     #image deserialization
     for temp_img in hotelid_image_mapping['image_serialized']:
@@ -63,10 +71,9 @@ def load_images(img_height, img_width, train_path):
     X_train = preprocess_input(train_img)
     #train_label = np.array(train_label)
     train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
-    hotelid_sequence = hotelid_image_mapping.index.values
+    #hotelid_sequence = hotelid_image_mapping.index.values
     y_train = star_onehot_encode(train_label)
-    
-    return X_train, y_train, hotelid_sequence
+    return X_train, y_train
 
 def resnet50_model(num_classes):
     """
