@@ -152,7 +152,8 @@ def load_images(img_height, img_width, train_path, skip_deserialize=False):
 
 def deserialize_image(hotelid_image_mapping, img_height, img_width):
 
-    train_img = list()
+    #train_img = list()
+    X_train = list()
     train_label = []
     
     #train_label = np.array(train_label)
@@ -165,17 +166,11 @@ def deserialize_image(hotelid_image_mapping, img_height, img_width):
     for idx in range(num_images):
         temp_img = hotelid_image_mapping.at[idx, 'image_serialized']
         temp_deserialized_img = np.frombuffer(temp_img, dtype='uint8').reshape(img_height, img_width, 3)
-        train_img.append(temp_deserialized_img)
+        X_train.append(preprocess_input(np.array(temp_deserialized_img)).astype('float16'))
         #after deserizlization of each image, drop the serialized image to release memory
         hotelid_image_mapping.drop(index=idx, inplace=True)
 
-    train_img = np.array(train_img, dtype='uint8')
-    print("preprocess input...")
-    X_train = preprocess_input(train_img)
-
-    #train_label = np.array(train_label)
-    train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
-    y_train = star_onehot_encode(train_label)
+    X_train = np.asarray(X_train, dtype='float16')
     return X_train, y_train
 
 def resnet50_model(num_classes):
@@ -213,7 +208,6 @@ if __name__ == '__main__':
     epochs = 100
 
     X, Y, _ = load_images(img_height, img_width, train_path)
-    breakpoint()
     num_classes = 5 # five star categories
 
     model = resnet50_model(num_classes)
