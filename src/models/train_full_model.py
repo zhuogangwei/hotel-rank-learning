@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 24 14:31:36 2021
-
-@author: Bo Xian Ye
-"""
 import pandas as pd
+from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from src.navigation import get_train_exterior_path
 from train_resnet50 import load_images, deserialize_image, resnet50_model
@@ -35,7 +30,7 @@ def align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, 
     
 if __name__ == '__main__':
     img_height = 225
-    img_width = 300
+    img_width = 300 # get this closer to 224
     batch_size = 32
     epochs = 100
     num_classes = 5

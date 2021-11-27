@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 23 21:17:35 2021
-
-@author: Bo Xian Ye
-"""
 import os
 import numpy as np
 from PIL import Image, ImageEnhance
