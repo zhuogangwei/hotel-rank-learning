@@ -72,17 +72,11 @@ def train_linear_model(x_train, y_train, x_test):
     return model
 
 def train_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
-
-    # define model
-    model = Sequential()
-    model.add(Dense(64, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal', input_shape=(x_train.shape[1],)))
-    model.add(Dense(32, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal'))
-    model.add(Dense(16, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal'))
-    model.add(Dense(8, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal'))
-    model.add(Dense(5, activation='softmax'))
+    model = DNN_model((x_train.shape[1],))
     # compile the model
     optmz = optimizers.Adam(learning_rate=0.0002, epsilon=1e-8)
     model.compile(optimizer=optmz, loss='categorical_crossentropy', metrics=['accuracy'])
+    
     # fit the model
     history = model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=epochs, batch_size=batch_size, verbose=1)
     
@@ -108,7 +102,16 @@ def train_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
     
     return model
  
-
+def DNN_model(input_shape):
+     # define model
+    model = Sequential()
+    model.add(Dense(64, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal', input_shape=input_shape))
+    model.add(Dense(32, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal'))
+    model.add(Dense(16, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal'))
+    model.add(Dense(8, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal', name = 'pre_output_layer'))
+    model.add(Dense(5, activation='softmax'))
+        
+    return model
 
 if __name__ == "__main__":
     x, y, _ = load_metadata("hotel_meta_processed.csv")
@@ -123,5 +126,5 @@ if __name__ == "__main__":
     y_test = star_onehot_encode(np.nan_to_num(y_test))
 
     #linear_model = train_linear_model(x_train, y_train, x_test)
-    DNN_model = train_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
+    train_DNN_model(x_train, y_train, x_test, y_test, 100, 32)
     

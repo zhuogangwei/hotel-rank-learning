@@ -185,7 +185,7 @@ def resnet50_model(num_classes):
     model = Model(model.input, x)
     
     # Train last few layers
-    for layer in model.layers[:-30]:
+    for layer in model.layers[:-19]:
         layer.trainable = False
 
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy', metrics.AUC()])
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     img_height = 225
     img_width = 300
     batch_size = 32
-    epochs = 100
+    epochs = 10
 
     X, Y, _ = load_images(img_height, img_width, train_path)
     num_classes = 5 # five star categories

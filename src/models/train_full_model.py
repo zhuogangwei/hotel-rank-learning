@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow.keras.layers import Input, Dense, Concatenate, LeakyReLU
+from tensorflow.keras.applications.resnet import ResNet50
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from src.utils import get_train_exterior_path
 from train_resnet50 import load_images, deserialize_image, resnet50_model
-from train_structured import load_metadata, train_DNN_model
+from train_structured import load_metadata, DNN_model
 
 def align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, img_width):
     """
@@ -35,10 +37,12 @@ def align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, 
     return imageX_train, metaX_train, imageX_val, metaX_val, Y_train, Y_val
     
 if __name__ == '__main__':
-    img_height = 225
-    img_width = 300 # get this closer to 224
+    img_height = 187
+    img_width = 250 # get this closer to 224
+    channels = 3
     batch_size = 32
-    epochs = 100
+    DNN_epochs = 30
+    CNN_epochs = 1
     num_classes = 5
     
     train_path = get_train_exterior_path()
@@ -47,24 +51,37 @@ if __name__ == '__main__':
     metaX, _, meta_hotelids = load_metadata("hotel_meta_processed.csv")
     imageX_train, metaX_train, imageX_val, metaX_val, Y_train, Y_val = align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, img_width)
     
-    DNN_model = train_DNN_model(metaX_train, Y_train, metaX_val, Y_val, epochs, batch_size)
-    CNN_model = resnet50_model(num_classes)
-    breakpoint()
+    input_CNN = Input(shape=(img_height, img_width, channels))
+    input_DNN = Input(shape=(metaX_train.shape[1]))
+    
+    CNN_model = ResNet50(weights='imagenet', pooling='avg', include_top=False)
+    CNN_dense1 = Dense(512, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal')(CNN_model.output)
+    CNN_dense2 = Dense(128, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal')(CNN_dense1)
+    CNN_dense3 = Dense(32, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal')(CNN_dense2)
+    CNN_dense4 = Dense(8, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal')(CNN_dense3)
+    
+    dnn_model = DNN_model((metaX.shape[1],))
+    
+    # Train last few layers
+    for layer in CNN_model.layers[:-19]:
+        layer.trainable = False
+    
+    """
     CNN_model.fit(imageX_train, Y_train,
                   validation_data=(imageX_val, Y_val),
-                  epochs=epochs, batch_size=batch_size, shuffle=False, verbose=1)
-    
-    input_CNN = tf.keras.layers.Input(imageX_train.shape)
-    input_DNN = tf.keras.layers.Input(metaX_train.shape)
-    
-    # Flatten layer :
-    flatten = tf.keras.layers.Flatten()(CNN_model.layers[-4])
+                  epochs=CNN_epochs, batch_size=batch_size, shuffle=False, verbose=1)
+    """
     
     # Concatenate
-    concat = tf.keras.layers.Concatenate()([flatten, DNN_model.layers[-2]])
+    concat = tf.keras.layers.Concatenate()([CNN_dense4, dnn_model])
 
-    # output layer
-    output = tf.keras.layers.Dense(units=num_classes, activation=tf.keras.activations.softmax)(concat)
+    # output layer input_shape=(None, concat.shape[-1])
+    output = Dense(units=num_classes, activation='softmax')(concat)
     
-    full_model = tf.keras.Model(inputs=[CNN_model, DNN_model], outputs=[output])
+    full_model = tf.keras.Model(inputs=[input_CNN, input_DNN], outputs=[output])
     print(full_model.summary())
+    
+    full_model.fit([metaX_train, imageX_train], Y_train,
+                  validation_data=([metaX_val, imageX_val], Y_val),
+                  epochs=CNN_epochs, batch_size=batch_size, shuffle=False, verbose=1)
+    
