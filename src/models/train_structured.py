@@ -73,10 +73,6 @@ def train_linear_model(x_train, y_train, x_test):
 
 def train_DNN_model(x_train, y_train, x_test, y_test, epochs, batch_size):
 
-    y_train = star_onehot_encode(y_train)
-    y_test = star_onehot_encode(y_test)
-    
-    
     # define model
     model = Sequential()
     model.add(Dense(64, activation=LeakyReLU(alpha=0.1), kernel_initializer='he_normal', input_shape=(x_train.shape[1],)))
@@ -122,9 +118,9 @@ if __name__ == "__main__":
 
     #handling null(if any)
     x_train = np.nan_to_num(x_train)
-    y_train = np.nan_to_num(y_train)
+    y_train = star_onehot_encode(np.nan_to_num(y_train))
     x_test = np.nan_to_num(x_test)
-    y_test = np.nan_to_num(y_test)
+    y_test = star_onehot_encode(np.nan_to_num(y_test))
 
     #linear_model = train_linear_model(x_train, y_train, x_test)
     DNN_model = train_DNN_model(x_train, y_train, x_test, y_test, 100, 32)

@@ -1,7 +1,9 @@
+import numpy as np
 import pandas as pd
+import tensorflow as tf
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
-from src.navigation import get_train_exterior_path
+from src.utils import get_train_exterior_path
 from train_resnet50 import load_images, deserialize_image, resnet50_model
 from train_structured import load_metadata, train_DNN_model
 
@@ -17,14 +19,18 @@ def align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, 
         
     #split train and test sets
     df_merged_train, df_merged_val = train_test_split(df_merged, test_size=0.2, random_state=0)
+    df_merged_train.reset_index(inplace=True)
+    df_merged_val.reset_index(inplace=True)
+    
+    #after the alignment join, split the merged dataset back into image and metadata
+    metaX_train = df_merged_train[metaX.columns].copy(deep=True).astype('float16')
+    metaX_val = df_merged_val[metaX.columns].copy(deep=True).astype('float16')
+    metaX_train = np.nan_to_num(np.asarray(metaX_train.drop(['hotelid'], axis = 1)))
+    metaX_val = np.nan_to_num(np.asarray(metaX_val.drop(['hotelid'], axis = 1)))
     
     #after the alignment join, split the merged dataset back into image and metadata
     imageX_train, Y_train = deserialize_image(df_merged_train, img_height, img_width)
     imageX_val, Y_val = deserialize_image(df_merged_val, img_height, img_width)
-    metaX_train = df_merged_train[metaX.columns]
-    metaX_val = df_merged_val[metaX.columns]
-    metaX_train.drop(['hotelid'], axis = 1)
-    metaX_val.drop(['hotelid'], axis = 1)
 
     return imageX_train, metaX_train, imageX_val, metaX_val, Y_train, Y_val
     
@@ -43,6 +49,22 @@ if __name__ == '__main__':
     
     DNN_model = train_DNN_model(metaX_train, Y_train, metaX_val, Y_val, epochs, batch_size)
     CNN_model = resnet50_model(num_classes)
+    breakpoint()
     CNN_model.fit(imageX_train, Y_train,
                   validation_data=(imageX_val, Y_val),
                   epochs=epochs, batch_size=batch_size, shuffle=False, verbose=1)
+    
+    input_CNN = tf.keras.layers.Input(imageX_train.shape)
+    input_DNN = tf.keras.layers.Input(metaX_train.shape)
+    
+    # Flatten layer :
+    flatten = tf.keras.layers.Flatten()(CNN_model.layers[-4])
+    
+    # Concatenate
+    concat = tf.keras.layers.Concatenate()([flatten, DNN_model.layers[-2]])
+
+    # output layer
+    output = tf.keras.layers.Dense(units=num_classes, activation=tf.keras.activations.softmax)(concat)
+    
+    full_model = tf.keras.Model(inputs=[CNN_model, DNN_model], outputs=[output])
+    print(full_model.summary())

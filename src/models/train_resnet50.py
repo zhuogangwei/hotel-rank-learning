@@ -86,9 +86,9 @@ def get_corrupted_path():
     Return the path to directory containing csvs of corrupted data.
     :return: corrupted
     """
-    os.chdir("../../data/train/corrupted")
+    os.chdir("../../data/corrupted")
     corrupted = os.path.join(os.getcwd())
-    os.chdir("../../../src/models")
+    os.chdir("../../src/models")
 
     return corrupted
 
