@@ -5,6 +5,7 @@ import pandas as pd
 import shutil
 import boto3
 import numpy as np
+import gc
 from zipfile import ZipFile
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import metrics
@@ -32,8 +33,9 @@ def load_images(img_height, img_width, train_path, skip_deserialize=False):
     #label are 1star, ..., 5star. Image files are group into 5 folders, with folder name = star number 
     labels = [p for p in labels if p.endswith('star')]
 
-    hotelid_image_mapping = pd.DataFrame(columns=['image_serialized', 'star'])
+    hotelid_image_mapping = pd.DataFrame(columns=['hotelid', 'image_serialized', 'star'])
 
+    idx=0
     for label in labels:
         label_path = os.path.join(train_path, label)
         image_filenames = os.listdir(label_path)
@@ -44,8 +46,9 @@ def load_images(img_height, img_width, train_path, skip_deserialize=False):
             #image serialization
             temp_img = image.img_to_array(temp_img).astype('uint8').tobytes()
             temp_hotelid = int(image_filename[0 : image_filename.find('_')])
-            new_row = pd.DataFrame([[temp_img, temp_star]], columns=hotelid_image_mapping.columns, index=[temp_hotelid])
+            new_row = pd.DataFrame([[temp_hotelid, temp_img, temp_star]], columns=hotelid_image_mapping.columns, index=[idx])
             hotelid_image_mapping = hotelid_image_mapping.append(new_row)
+            idx += 1
             #train_img.append(temp_img)
             #train_label.append(label2id[label])
     
@@ -62,17 +65,24 @@ def deserialize_image(hotelid_image_mapping, img_height, img_width):
     train_img = list()
     train_label = []
     
+    #train_label = np.array(train_label)
+    train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
+    y_train = star_onehot_encode(train_label)
+    
     #image deserialization
-    for temp_img in hotelid_image_mapping['image_serialized']:
+    num_images = hotelid_image_mapping['image_serialized'].count()
+    for idx in range(num_images):
+        temp_img = hotelid_image_mapping.at[idx, 'image_serialized']
+        #print(temp_img)
+        #print(temp_img.dtype.name)
         temp_deserialized_img = np.frombuffer(temp_img, dtype='uint8').reshape(img_height, img_width, 3)
         train_img.append(temp_deserialized_img)
+        #after deserizlization of each image, drop the serialized image to release memory
+        hotelid_image_mapping.drop(index=idx, inplace=True)
 
     train_img = np.array(train_img, dtype='uint8')
     X_train = preprocess_input(train_img)
-    #train_label = np.array(train_label)
-    train_label = hotelid_image_mapping['star'].to_numpy(dtype='uint8', copy = True)
-    #hotelid_sequence = hotelid_image_mapping.index.values
-    y_train = star_onehot_encode(train_label)
+
     return X_train, y_train
 
 def resnet50_model(num_classes):

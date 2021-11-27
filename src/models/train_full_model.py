@@ -18,8 +18,7 @@ def align_model_inputs(hotelid_image_mapping, metaX, meta_hotelids, img_height, 
     """
     #inner join image and metadata on hotelid
     metaX = pd.concat([metaX, meta_hotelids.astype('int32')], axis=1)
-    df_merged = hotelid_image_mapping.merge(metaX, how='inner', left_index=True, right_on='hotelid')
-    #print (df_merged.count())
+    df_merged = hotelid_image_mapping.merge(metaX, how='inner', left_on='hotelid', right_on='hotelid')
         
     #split train and test sets
     df_merged_train, df_merged_val = train_test_split(df_merged, test_size=0.2, random_state=0)
@@ -52,4 +51,3 @@ if __name__ == '__main__':
     CNN_model.fit(imageX_train, Y_train,
                   validation_data=(imageX_val, Y_val),
                   epochs=epochs, batch_size=batch_size, shuffle=False, verbose=1)
-    
